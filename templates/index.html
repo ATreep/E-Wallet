@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>E-Wallet</title>
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <meta name="viewport" id="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @font-face {
+            font-family: 'goople';
+            src: url("static/goople.ttf");
+        }
+
+        body {
+            font-family: "goople";
+            padding: 10px;
+        }
+
+        .title {
+            font-weight: bolder;
+            font-size: x-large;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .content {
+            font-size: medium;
+            padding: 20px;
+            text-align: left;
+        }
+
+        .card {
+            border-radius: 10px;
+            background-color: orangered;
+            margin: 10px;
+            text-align: center;
+            padding: 15px;
+            color: white;
+        }
+
+        .scroll-list {
+            max-height: 300px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center;margin-top: 20px;">
+        <img src="static/logo_brand.svg" alt="Logo Brand" height="100px">
+    </div>
+    <div>
+        <div class="title">
+            <span>Your Information</span>
+        </div>
+
+        <div class="content">
+            Node Address: {{ node_address }}
+            <br>
+            Node ID: {{ node_id }}
+            <br>
+            Public Key: {{ public_key }}
+            <br>
+            Private Key: {{ private_key }}
+            <br>
+            <div style="margin-top: 20px;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td class="card" style="width: 50%;">
+                            Balance: {{ balance }}
+                        </td>
+                        <td class="card" style="background-color: gray;width: 50%;">
+                            Income: {{ income }}
+                            <br>
+                            Expenditure: {{ expenditure }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="title">
+            <span>Operation</span>
+        </div>
+
+        <div class="content">
+            <button onclick="javascript:makeTransfer()">Make Transfer</button>
+            <button onclick="javascript:mine()">Mine</button>
+
+            <div id="make_transfer_card" class="card" style="background-color: rgb(225, 225, 225);display: none;text-align: left;color: black;">
+                <div style="font-size: large;">Make Transfer</div>
+                <div style="padding: 20px;">
+                    <div style="font-size: medium;">Choose a receiver account: </div>
+                    <div class="scroll-list">
+                        <form id="accounts_form">
+                        </form>
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="font-size: medium;">Set amount: </div>
+                    <input id="transfer_amount" type="number" min="0" placeholder="0.00">
+                </div>
+
+                <button onclick="javascript:submitTransfer()">Submit</button>
+                <button onclick="javascript:document.getElementById('make_transfer_card').style.display='none'">Cancel</button>
+            </div>
+        </div>
+
+        <div class="title">
+            <span>Transaction Record</span>
+        </div>
+
+        <div class="content">
+            <table id="transaction_table" style="width: 100%;" border="1px">
+                <tr>
+                    <th>
+                        Time
+                    </th>
+                    <th>
+                        Type
+                    </th>
+                    <th>
+                        Opposite Node ID
+                    </th>
+                    <th>
+                        Amount
+                    </th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        transaction = {{ transaction_record | safe }};
+        transaction_table = document.getElementById("transaction_table");
+        transaction.forEach(single_transaction => {
+            isSender = single_transaction[0];
+            op_node_id = single_transaction[1];
+            time = single_transaction[2];
+            amount = single_transaction[3];
+
+            tr = document.createElement("tr");
+
+            td_time = document.createElement("td");
+            td_time.setAttribute("width", "20%");
+            td_time.innerHTML = "<span>" + time + "</span>";
+
+            td_type = document.createElement("td");
+            td_type.setAttribute("width", "10%");
+            td_type.innerHTML = "<span style='color:" + (isSender ? "red" : "green") + "'>" + (isSender ? "Expenditure" : "Income") + "</span>";
+
+            td_id = document.createElement("td");
+            td_id.setAttribute("width", "50%");
+            td_id.innerHTML = "<span>" + op_node_id + "</span>";
+
+            td_amount = document.createElement("td");
+            td_amount.setAttribute("width", "20%");
+            td_amount.innerHTML = "<span>" + amount + "</span>";
+
+            tr.appendChild(td_time);
+            tr.appendChild(td_type);
+            tr.appendChild(td_id);
+            tr.appendChild(td_amount);
+
+            transaction_table.appendChild(tr)
+        });
+
+        if (transaction.length == 0) {
+            transaction_table.innerHTML = "No transaction record.";
+        }
+
+        function makeTransfer() {
+            receiver_array = {{ receiver_array | safe }};
+            accounts_form = document.getElementById("accounts_form");
+            accounts_form.innerHTML = '';
+            isCheckedFirst = false;
+            receiver_array.forEach(id => {
+                accounts_form.innerHTML += "<label> <input type='radio' name='account_id' value='"+id+"' "+(isCheckedFirst ? "" : "checked")+"> "+id+" </label><br>"
+                if(!isCheckedFirst) isCheckedFirst = true;
+            });
+            if(receiver_array.length == 0)
+            {
+                accounts_form.innerHTML = "No account."
+            }
+
+            transaction_amount = document.getElementById("transfer_amount");
+            transaction_amount.value = "";
+
+            document.getElementById('make_transfer_card').style.display = 'block';
+        }
+
+        function submitTransfer()
+        {
+            balance = {{ balance }};
+            account_id = document.getElementsByName("account_id");
+            target_id = "";
+            account_id.forEach(element => {
+                if(element.checked){
+                    target_id = element.value;
+                }
+            });
+
+            transfer_amount = document.getElementById("transfer_amount");
+            amount = transfer_amount.value.trim();
+            if(amount == "")
+            {
+                amount = 0;
+            }
+            else
+            {
+                amount = parseFloat(amount);
+            }
+
+            if(target_id == "" || amount <= 0 || amount > balance)
+            {
+                alert("You cannot make an invalid transfer.");
+            }
+            else
+            {
+                let xhr= new XMLHttpRequest();
+                xhr.open("POST","http://{{ node_address }}/create_transaction" ,false);                                            
+                xhr.onreadystatechange = function() {                 
+                    window.location.reload();
+                }
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.send(JSON.stringify({
+                    "receiver": target_id,
+                    "amount": amount
+                }));
+            }
+        }
+
+        function mine() {
+            if (confirm("Do you want to start mining?")) 
+            {
+                let xhr= new XMLHttpRequest();
+                xhr.open("POST","http://{{ node_address }}/mine" ,false);                                            
+                xhr.onreadystatechange = function() {  
+                    alert("Have mined successfully.");               
+                    window.location.reload();
+                }
+                xhr.send();
+            } 
+        }
+    </script>
+</body>
+
+</html>
