@@ -1,0 +1,7 @@
+colorama
+flask
+hashlib
+requests
+gmssl
+webbrowser
+datetime
