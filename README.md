@@ -14,6 +14,9 @@ At present stage, E-Wallet has follow functions:
 - Mine new block
 - Encrypt transactions with SM2
 
+## Screenshot
+![Screenshot](Screenshot.png)
+
 ## Installation
 ```shell
 pip install -r requirements.txt

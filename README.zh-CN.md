@@ -14,6 +14,9 @@ E-Wallet 使用 Flask 网络框架以及国密 SM2 加密算法。
 - 挖矿
 - 使用 SM2 加密账单
 
+## 屏幕截图
+![屏幕截图](Screenshot.png)
+
 ## 安装
 ```shell
 pip install -r requirements.txt
